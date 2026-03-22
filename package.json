@@ -1,6 +1,6 @@
 {
   "name": "rescue-nextgen-desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "RESCUE NextGen\u2122 Desktop Application \u2014 GadgetTaco LLC",
   "main": "main.js",
   "private": true,

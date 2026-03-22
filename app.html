@@ -701,7 +701,7 @@
       frame.onload = () => {
         setTimeout(() => {
           splash.classList.add('hidden');
-          setStatus('connected', 'Training System Online');
+          setStatus('connected', 'System Online');
           retryCount = 0;
           connectedOnce = true;
           startHeartbeat();
@@ -764,7 +764,7 @@
           if (r.ok) {
             hideOffline();
             document.getElementById('app-frame').src = nucUrl;
-            setStatus('connected', 'Training System Online');
+            setStatus('connected', 'System Online');
           } else { startCountdown(); }
         })
         .catch(() => startCountdown());
