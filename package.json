@@ -1,0 +1,61 @@
+{
+  "name": "rescue-nextgen-desktop",
+  "version": "1.0.0",
+  "description": "RESCUE NextGen™ Desktop Application — GadgetTaco LLC",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start":       "electron .",
+    "dev":         "NODE_ENV=development electron .",
+    "dist":        "electron-builder --win",
+    "dist:mac":    "electron-builder --mac",
+    "dist:all":    "electron-builder --win --mac"
+  },
+  "devDependencies": {
+    "electron":         "^29.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId":       "com.gadgettaco.rescue-nextgen",
+    "productName": "RESCUE NextGen",
+    "copyright":   "Copyright © 2025 GadgetTaco LLC. All rights reserved.",
+
+    "files": [
+      "main.js",
+      "preload.js",
+      "app.html",
+      "config.json",
+      "assets/**"
+    ],
+
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "assets/rescue-icon.ico"
+    },
+
+    "nsis": {
+      "oneClick":           false,
+      "allowToChangeInstallationDirectory": false,
+      "installerIcon":      "assets/rescue-icon.ico",
+      "uninstallerIcon":    "assets/rescue-icon.ico",
+      "installerHeaderIcon":"assets/rescue-icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName":       "RESCUE NextGen",
+      "license":            "assets/LICENSE.rtf"
+    },
+
+    "mac": {
+      "target": "dmg",
+      "icon":   "assets/rescue-icon.icns",
+      "category": "public.app-category.business"
+    },
+
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    }
+  }
+}

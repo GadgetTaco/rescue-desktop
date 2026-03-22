@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline' http: https: data: blob:;">
+  <title>RESCUE NextGen™</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --navy:      #0e3f56;
+      --navy-mid:  #1a5570;
+      --zinc-950:  #09090b;
+      --zinc-900:  #18181b;
+      --zinc-800:  #27272a;
+      --zinc-750:  #303033;
+      --zinc-700:  #3f3f46;
+      --zinc-500:  #71717a;
+      --zinc-400:  #a1a1aa;
+      --zinc-300:  #d4d4d8;
+      --zinc-100:  #f4f4f5;
+      --orange:    #e07026;
+      --brand:     #42B0D5;
+      --green:     #10b981;
+      --red:       #ef4444;
+      --amber:     #f59e0b;
+      --text:      #f4f4f5;
+      --titlebar-h: 38px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--navy);
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TITLEBAR ──────────────────────────────────────────────────────────── */
+    #titlebar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--titlebar-h);
+      background: var(--navy);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 9999;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    /* ── LEFT: icon menu trigger + site name ───────────────────────────────── */
+    #titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    #icon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: var(--titlebar-h);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s ease;
+      -webkit-app-region: no-drag;
+    }
+    #icon-btn:hover { background: rgba(255,255,255,0.07); }
+    #icon-btn.active { background: rgba(255,255,255,0.1); }
+
+    #icon-btn svg {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    #titlebar-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 4px;
+      -webkit-app-region: drag;
+    }
+
+    #app-name {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: white;
+      opacity: 0.92;
+      white-space: nowrap;
+    }
+
+    #site-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      font-weight: 500;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #site-label::before {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 11px;
+      background: rgba(255,255,255,0.18);
+    }
+
+    /* ── CENTER: status pill ────────────────────────────────────────────────── */
+    #titlebar-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-app-region: drag;
+    }
+
+    #status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.03em;
+      transition: all 0.3s ease;
+      -webkit-app-region: no-drag;
+    }
+    #status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      flex-shrink: 0;
+      transition: background 0.3s ease;
+    }
+    #status-pill.connected { color: var(--green); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); }
+    #status-pill.connected #status-dot { background: var(--green); box-shadow: 0 0 6px rgba(16,185,129,0.6); animation: pulse 2.5s ease-in-out infinite; }
+    #status-pill.error { color: var(--red); border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+    #status-pill.error #status-dot { background: var(--red); }
+
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
+
+    /* ── RIGHT: window controls ─────────────────────────────────────────────── */
+    #titlebar-right {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+    .win-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 42px; height: var(--titlebar-h);
+      background: transparent; border: none; cursor: pointer;
+      color: rgba(255,255,255,0.45);
+      transition: background 0.1s ease, color 0.1s ease;
+      -webkit-app-region: no-drag;
+      flex-shrink: 0;
+    }
+    .win-btn:hover        { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+    .win-btn.close:hover  { background: #dc2626; color: white; }
+    .win-btn svg { pointer-events: none; }
+
+    /* ── ICON DROPDOWN MENU ─────────────────────────────────────────────────── */
+    #icon-menu {
+      position: fixed;
+      top: var(--titlebar-h);
+      left: 0;
+      width: 268px;
+      background: #111113;
+      border: 1px solid var(--zinc-800);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 9998;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    #icon-menu.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    /* Menu header — branding */
+    .menu-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--zinc-800);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .menu-header-logo {
+      width: 32px; height: 32px; flex-shrink: 0;
+    }
+    .menu-header-text {}
+    .menu-header-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.04em;
+    }
+    .menu-header-version {
+      font-size: 10px;
+      color: var(--zinc-500);
+      margin-top: 1px;
+    }
+
+    /* Section label */
+    .menu-section-label {
+      padding: 10px 16px 4px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--zinc-500);
+    }
+
+    /* Menu item */
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      color: var(--zinc-300);
+      font-size: 12px;
+      font-weight: 500;
+      transition: background 0.12s ease, color 0.12s ease;
+      text-decoration: none;
+    }
+    .menu-item:hover { background: var(--zinc-800); color: white; }
+    .menu-item:hover .menu-item-icon { opacity: 1; }
+
+    .menu-item-icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      opacity: 0.75;
+      transition: opacity 0.12s ease;
+    }
+    .menu-item-icon svg { pointer-events: none; }
+
+    .menu-item-body { flex: 1; min-width: 0; }
+    .menu-item-label { display: block; }
+    .menu-item-desc {
+      display: block;
+      font-size: 10px;
+      color: var(--zinc-500);
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* External link badge */
+    .menu-item-ext {
+      color: var(--zinc-600);
+      flex-shrink: 0;
+    }
+
+    /* Divider */
+    .menu-divider {
+      height: 1px;
+      background: var(--zinc-800);
+      margin: 4px 0;
+    }
+
+    /* Health mini-row inside menu */
+    #health-row {
+      padding: 6px 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .health-service {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--zinc-400);
+    }
+    .health-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--zinc-700);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .health-dot.healthy { background: var(--green); box-shadow: 0 0 4px rgba(16,185,129,0.5); }
+    .health-dot.degraded { background: var(--amber); }
+    .health-dot.down    { background: var(--red); }
+
+    /* Footer attribution */
+    .menu-footer {
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--zinc-800);
+    }
+    .menu-footer p {
+      font-size: 9.5px;
+      color: var(--zinc-600);
+      line-height: 1.5;
+    }
+    .menu-footer strong { color: var(--zinc-500); }
+
+    /* ── CONTENT ────────────────────────────────────────────────────────────── */
+    #content {
+      position: fixed;
+      top: var(--titlebar-h);
+      left: 0; right: 0; bottom: 0;
+    }
+
+    /* ── SPLASH ─────────────────────────────────────────────────────────────── */
+    #splash {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: var(--navy);
+      z-index: 10;
+      transition: opacity 0.4s ease;
+    }
+    #splash.hidden { opacity: 0; pointer-events: none; }
+    #splash-logo { width: 80px; height: 80px; opacity: 0.9; }
+    #splash-title { font-size: 22px; font-weight: 800; letter-spacing: 0.08em; color: white; }
+    #splash-sub { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.06em; text-transform: uppercase; }
+    #splash-spinner {
+      width: 32px; height: 32px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    #splash-retry {
+      margin-top: 8px; padding: 8px 20px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.6);
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; display: none;
+      transition: background 0.15s ease;
+    }
+    #splash-retry:hover { background: rgba(255,255,255,0.12); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── IFRAME ─────────────────────────────────────────────────────────────── */
+    #app-frame { width: 100%; height: 100%; border: none; display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- ── TITLEBAR ──────────────────────────────────────────────────────────── -->
+  <div id="titlebar">
+
+    <!-- Left: clickable icon + app name + site -->
+    <div id="titlebar-left">
+      <button id="icon-btn" title="RESCUE NextGen™ Menu" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <rect width="512" height="512" rx="88" fill="#0e3f56"/>
+          <g transform="matrix(0.87 0 0 0.87 -579.2 -216.5)">
+            <path fill="#e07026" d="M960.01,326.18c53.48,0,101.75,22.64,135.82,58.8l26.69-26.69c-40.92-42.99-98.62-69.87-162.51-69.87s-121.6,26.88-162.51,69.87l26.69,26.69c34.07-36.16,82.34-58.8,135.82-58.8Z"/>
+            <path fill="#e07026" d="M960.01,411.98c29.83,0,56.66,13.02,75.15,33.66l26.72-26.72c-25.35-27.47-61.63-44.71-101.87-44.71s-76.51,17.24-101.87,44.71l26.72,26.72c18.49-20.64,45.32-33.66,75.15-33.66Z"/>
+            <circle fill="#e07026" cx="960.01" cy="496.4" r="30.98"/>
+          </g>
+          <g transform="matrix(0.475 0 0 0.475 -200 95)">
+            <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="551.68" cy="621.59" r="81.67"/>
+            <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="715.01" cy="621.59" r="81.67"/>
+            <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="878.34" cy="621.59" r="81.67"/>
+            <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1041.67" cy="621.59" r="81.67"/>
+            <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1205" cy="621.59" r="81.67"/>
+            <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1368.33" cy="621.59" r="81.67"/>
+          </g>
+        </svg>
+      </button>
+
+      <div id="titlebar-meta">
+        <span id="app-name">RESCUE NextGen™</span>
+        <span id="site-label" style="display:none"></span>
+      </div>
+    </div>
+
+    <!-- Center: connection status -->
+    <div id="titlebar-center">
+      <div id="status-pill">
+        <div id="status-dot"></div>
+        <span id="status-text">Connecting…</span>
+      </div>
+    </div>
+
+    <!-- Right: window controls only -->
+    <div id="titlebar-right">
+      <button class="win-btn" id="btn-minimize" title="Minimize">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <rect x="1" y="5.5" width="10" height="1.5" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="win-btn" id="btn-maximize" title="Maximize">
+        <svg width="12" height="12" viewBox="0 0 12 12" id="icon-maximize">
+          <rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <svg width="12" height="12" viewBox="0 0 12 12" id="icon-restore" style="display:none">
+          <rect x="3" y="1.5" width="7.5" height="7.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M1.5 3.5 L1.5 10.5 L8.5 10.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button class="win-btn close" id="btn-close" title="Close">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <line x1="1.5" y1="1.5" x2="10.5" y2="10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="10.5" y1="1.5" x2="1.5" y2="10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── ICON DROPDOWN MENU ─────────────────────────────────────────────────── -->
+  <div id="icon-menu" role="menu">
+
+    <!-- Header -->
+    <div class="menu-header">
+      <svg class="menu-header-logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" rx="88" fill="#0e3f56"/>
+        <g transform="matrix(0.87 0 0 0.87 -579.2 -216.5)">
+          <path fill="#e07026" d="M960.01,326.18c53.48,0,101.75,22.64,135.82,58.8l26.69-26.69c-40.92-42.99-98.62-69.87-162.51-69.87s-121.6,26.88-162.51,69.87l26.69,26.69c34.07-36.16,82.34-58.8,135.82-58.8Z"/>
+          <path fill="#e07026" d="M960.01,411.98c29.83,0,56.66,13.02,75.15,33.66l26.72-26.72c-25.35-27.47-61.63-44.71-101.87-44.71s-76.51,17.24-101.87,44.71l26.72,26.72c18.49-20.64,45.32-33.66,75.15-33.66Z"/>
+          <circle fill="#e07026" cx="960.01" cy="496.4" r="30.98"/>
+        </g>
+        <g transform="matrix(0.475 0 0 0.475 -200 95)">
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="551.68" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="715.01" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="878.34" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1041.67" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1205" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1368.33" cy="621.59" r="81.67"/>
+        </g>
+      </svg>
+      <div class="menu-header-text">
+        <div class="menu-header-title">RESCUE NextGen™</div>
+        <div class="menu-header-version" id="menu-version">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Operations -->
+    <div class="menu-section-label">Operations</div>
+
+    <button class="menu-item" id="mi-dashboard">
+      <div class="menu-item-icon" style="background:rgba(66,176,213,0.12);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42B0D5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+      </div>
+      <div class="menu-item-body">
+        <span class="menu-item-label">RESCUE Dashboard</span>
+        <span class="menu-item-desc">api.awaresimulation.com</span>
+      </div>
+      <svg class="menu-item-ext" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+    </button>
+
+    <div class="menu-divider"></div>
+
+    <!-- Edge Server -->
+    <div class="menu-section-label">Edge Server</div>
+
+    <button class="menu-item" id="mi-admin">
+      <div class="menu-item-icon" style="background:rgba(224,112,38,0.12);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e07026" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <div class="menu-item-body">
+        <span class="menu-item-label">Edge Admin</span>
+        <span class="menu-item-desc">192.168.50.1 — Site dashboard</span>
+      </div>
+      <svg class="menu-item-ext" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+    </button>
+
+    <button class="menu-item" id="mi-telemetry">
+      <div class="menu-item-icon" style="background:rgba(16,185,129,0.1);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="menu-item-body">
+        <span class="menu-item-label">Telemetry</span>
+        <span class="menu-item-desc">System metrics &amp; performance</span>
+      </div>
+      <svg class="menu-item-ext" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+    </button>
+
+    <button class="menu-item" id="mi-dongles">
+      <div class="menu-item-icon" style="background:rgba(161,161,170,0.1);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="15" rx="2"/>
+          <polyline points="17 2 12 7 7 2"/>
+        </svg>
+      </div>
+      <div class="menu-item-body">
+        <span class="menu-item-label">Dongle Diagnostics</span>
+        <span class="menu-item-desc">GRID display status</span>
+      </div>
+      <svg class="menu-item-ext" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+    </button>
+
+    <!-- Live health -->
+    <div class="menu-section-label">System Health</div>
+    <div id="health-row">
+      <div class="health-service"><span>Backend API</span>    <div class="health-dot" id="hd-backend"></div></div>
+      <div class="health-service"><span>Database</span>       <div class="health-dot" id="hd-db"></div></div>
+      <div class="health-service"><span>MQTT Broker</span>    <div class="health-dot" id="hd-mqtt"></div></div>
+      <div class="health-service"><span>VPN Remote</span>     <div class="health-dot" id="hd-vpn"></div></div>
+    </div>
+
+    <div class="menu-divider"></div>
+
+    <!-- Attribution -->
+    <div class="menu-footer">
+      <p><strong>RESCUE NextGen™</strong> is a trademark of Maersk Training Inc.</p>
+      <p style="margin-top:4px;">Powered by <strong>AWARE™</strong> &copy; 2025 GadgetTaco LLC.<br>All rights reserved.</p>
+    </div>
+
+  </div>
+
+  <!-- ── CONTENT ──────────────────────────────────────────────────────────── -->
+  <div id="content">
+    <div id="splash">
+      <svg id="splash-logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" rx="88" fill="#0e3f56"/>
+        <g transform="matrix(0.87 0 0 0.87 -579.2 -216.5)">
+          <path fill="#e07026" d="M960.01,326.18c53.48,0,101.75,22.64,135.82,58.8l26.69-26.69c-40.92-42.99-98.62-69.87-162.51-69.87s-121.6,26.88-162.51,69.87l26.69,26.69c34.07-36.16,82.34-58.8,135.82-58.8Z"/>
+          <path fill="#e07026" d="M960.01,411.98c29.83,0,56.66,13.02,75.15,33.66l26.72-26.72c-25.35-27.47-61.63-44.71-101.87-44.71s-76.51,17.24-101.87,44.71l26.72,26.72c18.49-20.64,45.32-33.66,75.15-33.66Z"/>
+          <circle fill="#e07026" cx="960.01" cy="496.4" r="30.98"/>
+        </g>
+        <g transform="matrix(0.475 0 0 0.475 -200 95)">
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="551.68" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="715.01" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="878.34" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1041.67" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1205" cy="621.59" r="81.67"/>
+          <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1368.33" cy="621.59" r="81.67"/>
+        </g>
+      </svg>
+      <div id="splash-title">RESCUE NextGen™</div>
+      <div id="splash-sub"></div>
+      <div id="splash-spinner"></div>
+      <button id="splash-retry">Retry Connection</button>
+    </div>
+    <iframe
+      id="app-frame"
+      sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-downloads"
+      allow="camera; microphone; fullscreen"
+    ></iframe>
+  </div>
+
+  <script>
+    const api    = window.rescueApp;
+    const NUC_IP = '192.168.50.1';
+    let   nucUrl = `http://${NUC_IP}/rescue`;
+    let   menuOpen = false;
+
+    // ── Version display ─────────────────────────────────────────────────────
+    // Fetch RESCUE backend version from /api/status
+    async function fetchVersion() {
+      try {
+        const r = await fetch(`http://${NUC_IP}/api/rescue/system/time`, { signal: AbortSignal.timeout(3000) });
+        // Use desktop app version as fallback
+        document.getElementById('menu-version').textContent = 'v1.0.0 · AWARE™ Edge';
+      } catch (_) {
+        document.getElementById('menu-version').textContent = 'v1.0.0 · AWARE™ Edge';
+      }
+    }
+
+    // ── Site name ────────────────────────────────────────────────────────────
+    async function fetchSiteName() {
+      try {
+        const r = await fetch(`http://${NUC_IP}/api/v1/health`, { signal: AbortSignal.timeout(3000) });
+        if (r.ok) {
+          const d = await r.json();
+          return d.site || null;
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    // ── Live health dots ──────────────────────────────────────────────────────
+    async function refreshHealth() {
+      try {
+        const r = await fetch(`http://${NUC_IP}/api/v1/health`, { signal: AbortSignal.timeout(4000) });
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+
+        // d.services = [{name, status}, ...]
+        const map = {};
+        (d.services || []).forEach(s => { map[s.name.toLowerCase()] = s.status; });
+
+        function dot(id, key) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.className = 'health-dot';
+          const st = map[key] || 'unknown';
+          if (st === 'healthy')  el.classList.add('healthy');
+          else if (st === 'down') el.classList.add('down');
+          else                    el.classList.add('degraded');
+        }
+        dot('hd-backend', 'backend');
+        dot('hd-db',      'postgresql');
+        dot('hd-mqtt',    'mqtt');
+        dot('hd-vpn',     'vpn remote support');
+      } catch (_) {
+        // NUC unreachable — leave dots grey
+      }
+    }
+
+    // ── Startup ──────────────────────────────────────────────────────────────
+    api.getConfig().then(async cfg => {
+      nucUrl = cfg.nucUrl;
+      fetchVersion();
+
+      const siteName = await fetchSiteName();
+      if (siteName) {
+        const el = document.getElementById('site-label');
+        el.textContent = siteName;
+        el.style.display = 'flex';
+        document.getElementById('splash-sub').textContent = siteName;
+      }
+      loadApp(nucUrl);
+    });
+
+    // ── Load app in iframe ───────────────────────────────────────────────────
+    let retryCount = 0, retryTimer = null;
+
+    function loadApp(url) {
+      const frame  = document.getElementById('app-frame');
+      const splash = document.getElementById('splash');
+      const retry  = document.getElementById('splash-retry');
+
+      setStatus('connecting', 'Connecting…');
+      frame.src = url;
+
+      frame.onload = () => {
+        setTimeout(() => {
+          splash.classList.add('hidden');
+          setStatus('connected', 'Training System Online');
+          retryCount = 0;
+        }, 800);
+      };
+      frame.onerror = () => {
+        setStatus('error', 'Connection Failed');
+        retry.style.display = 'block';
+        if (retryCount < 3) { retryCount++; retryTimer = setTimeout(() => loadApp(nucUrl), 5000); }
+      };
+    }
+
+    function setStatus(state, label) {
+      const pill = document.getElementById('status-pill');
+      pill.className = '';
+      if (state !== 'connecting') pill.classList.add(state);
+      document.getElementById('status-text').textContent = label;
+    }
+
+    document.getElementById('splash-retry').addEventListener('click', () => {
+      retryCount = 0; clearTimeout(retryTimer);
+      document.getElementById('splash-retry').style.display = 'none';
+      document.getElementById('splash').classList.remove('hidden');
+      loadApp(nucUrl);
+    });
+
+    // ── Icon menu toggle ─────────────────────────────────────────────────────
+    const iconBtn  = document.getElementById('icon-btn');
+    const iconMenu = document.getElementById('icon-menu');
+
+    function openMenu() {
+      menuOpen = true;
+      iconMenu.classList.add('open');
+      iconBtn.classList.add('active');
+      iconBtn.setAttribute('aria-expanded', 'true');
+      refreshHealth(); // always fetch fresh on open
+    }
+    function closeMenu() {
+      menuOpen = false;
+      iconMenu.classList.remove('open');
+      iconBtn.classList.remove('active');
+      iconBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    iconBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuOpen ? closeMenu() : openMenu();
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (menuOpen && !iconMenu.contains(e.target) && e.target !== iconBtn) {
+        closeMenu();
+      }
+    });
+
+    // ── Menu item actions ────────────────────────────────────────────────────
+    function menuAction(id, action) {
+      document.getElementById(id).addEventListener('click', () => {
+        closeMenu();
+        action();
+      });
+    }
+
+    menuAction('mi-dashboard', () => api.openExternal('https://api.awaresimulation.com'));
+    menuAction('mi-admin',     () => api.openExternal(`http://${NUC_IP}`));
+    menuAction('mi-telemetry', () => api.openExternal(`http://${NUC_IP}/api/v1/telemetry`));
+    menuAction('mi-dongles',   () => api.openExternal(`http://${NUC_IP}/dongle/diagnostics.html`));
+
+    // ── Window controls ──────────────────────────────────────────────────────
+    document.getElementById('btn-minimize').addEventListener('click', () => api.minimize());
+    document.getElementById('btn-maximize').addEventListener('click', () => api.maximize());
+    document.getElementById('btn-close').addEventListener('click',    () => api.close());
+
+    function setMaxIcon(isMax) {
+      document.getElementById('icon-maximize').style.display = isMax ? 'none'  : 'block';
+      document.getElementById('icon-restore').style.display  = isMax ? 'block' : 'none';
+    }
+    setMaxIcon(api.isMaximized());
+    api.onMaximizedChange(setMaxIcon);
+  </script>
+
+</body>
+</html>
