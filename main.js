@@ -1,12 +1,13 @@
 'use strict';
 
 const { app, BrowserWindow, ipcMain, shell, Menu, screen, globalShortcut } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-const NUC_IP   = '192.168.50.1';
-const NUC_URL  = `http://${NUC_IP}/rescue`;
-const IS_DEV   = process.env.NODE_ENV === 'development';
+// ─── Constants ────────────────────────────────────────────────────────────────
+const NUC_IP = '192.168.50.1';
+const NUC_URL = `http://${NUC_IP}/rescue`;
+const IS_DEV  = process.env.NODE_ENV === 'development';
 
 // ─── Single instance lock ─────────────────────────────────────────────────────
 const gotLock = app.requestSingleInstanceLock();
@@ -21,13 +22,40 @@ if (!gotLock) {
   });
 }
 
-// ─── Create main window ──────────────────────────────────────────────────────
+// ─── Auto-updater config ──────────────────────────────────────────────────────
+function setupAutoUpdater() {
+  if (IS_DEV) return; // Never auto-update in dev mode
+
+  autoUpdater.autoDownload    = true;  // Download silently in background
+  autoUpdater.autoInstallOnAppQuit = true; // Install when app next closes
+
+  // Check on startup, then every 4 hours
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+  setInterval(() => {
+    autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+  }, 4 * 60 * 60 * 1000);
+
+  // Tell the renderer an update is ready to install
+  autoUpdater.on('update-downloaded', (info) => {
+    mainWindow?.webContents.send('update:ready', {
+      version: info.version,
+      releaseNotes: info.releaseNotes || '',
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    // Silently ignore update errors — offline vessels etc.
+    console.log('Auto-updater error (non-fatal):', err.message);
+  });
+}
+
+// ─── Create main window ───────────────────────────────────────────────────────
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   const win = new BrowserWindow({
-    width:  Math.min(1920, width),
-    height: Math.min(1080, height),
+    width:     Math.min(1920, width),
+    height:    Math.min(1080, height),
     minWidth:  1024,
     minHeight: 640,
     icon: path.join(__dirname, 'assets', 'rescue-icon.png'),
@@ -43,9 +71,7 @@ function createWindow() {
     show: false,
   });
 
-  // Start maximized
   win.maximize();
-
   win.loadFile(path.join(__dirname, 'app.html'));
 
   win.once('ready-to-show', () => {
@@ -72,7 +98,7 @@ function createWindow() {
   return win;
 }
 
-// ─── IPC handlers ────────────────────────────────────────────────────────────
+// ─── IPC handlers ─────────────────────────────────────────────────────────────
 let mainWindow;
 
 ipcMain.on('window:minimize',  () => mainWindow?.minimize());
@@ -84,25 +110,34 @@ ipcMain.on('window:is-maximized', (event) => {
   event.returnValue = mainWindow?.isMaximized() ?? false;
 });
 
+// Open any URL in real system browser (http/https only)
 ipcMain.on('open:external', (_event, url) => {
   if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
     shell.openExternal(url);
   }
 });
 
-ipcMain.handle('get:config', () => ({ nucUrl: NUC_URL }));
+// Install update now (called from renderer when user clicks Install)
+ipcMain.on('update:install', () => {
+  autoUpdater.quitAndInstall(false, true);
+});
+
+// Pass config + app version to renderer
+ipcMain.handle('get:config', () => ({
+  nucUrl:  NUC_URL,
+  version: app.getVersion(), // reads from package.json automatically
+}));
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
-  // Remove default File/Edit/View menu bar completely
   Menu.setApplicationMenu(null);
 
-  // F11 toggles true fullscreen — hides Windows taskbar completely
   globalShortcut.register('F11', () => {
     if (mainWindow) mainWindow.setFullScreen(!mainWindow.isFullScreen());
   });
 
   mainWindow = createWindow();
+  setupAutoUpdater();
 
   mainWindow.on('maximize',   () => mainWindow.webContents.send('window:maximized-change', true));
   mainWindow.on('unmaximize', () => mainWindow.webContents.send('window:maximized-change', false));

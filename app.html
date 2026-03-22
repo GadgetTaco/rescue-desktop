@@ -176,6 +176,18 @@
     .win-btn:hover        { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
     .win-btn.close:hover  { background: #dc2626; color: white; }
     .win-btn svg { pointer-events: none; }
+    /* UPDATE BADGE */
+    #update-badge { display:none; position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--orange); box-shadow:0 0 6px rgba(224,112,38,.8); animation:pulse 2s ease-in-out infinite; pointer-events:none; }
+    #update-badge.visible { display:block; }
+    /* OFFLINE OVERLAY */
+    #offline-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; background:var(--navy); z-index:9; opacity:0; pointer-events:none; transition:opacity .4s ease; }
+    #offline-overlay.visible { opacity:1; pointer-events:all; }
+    #offline-logo { width:64px; height:64px; opacity:.7; }
+    #offline-title { font-size:20px; font-weight:800; letter-spacing:.06em; color:white; }
+    #offline-sub   { font-size:11px; color:rgba(255,255,255,.45); text-transform:uppercase; }
+    #offline-countdown { font-size:11px; font-weight:600; color:rgba(255,255,255,.35); }
+    #offline-spinner { width:28px; height:28px; border:2px solid rgba(255,255,255,.1); border-top-color:var(--orange); border-radius:50%; animation:spin .9s linear infinite; }
+
 
     /* ── ICON DROPDOWN MENU ─────────────────────────────────────────────────── */
     #icon-menu {
@@ -399,6 +411,7 @@
             <circle fill="none" stroke="#e07026" stroke-width="22.95" cx="1368.33" cy="621.59" r="81.67"/>
           </g>
         </svg>
+        <span id="update-badge" title="Update available"></span>
       </button>
 
       <div id="titlebar-meta">
@@ -552,6 +565,23 @@
 
     <div class="menu-divider"></div>
 
+
+    <div id="update-section" style="display:none">
+      <div class="menu-divider"></div>
+      <div class="menu-section-label" style="color:#e07026;">Update Available</div>
+      <button class="menu-item" id="mi-install-update">
+        <div class="menu-item-icon" style="background:rgba(224,112,38,0.15);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e07026" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="8 17 12 21 16 17"/><line x1="12" y1="11" x2="12" y2="21"/>
+            <path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/>
+          </svg>
+        </div>
+        <div class="menu-item-body">
+          <span class="menu-item-label" id="update-version-label">Install Update</span>
+          <span class="menu-item-desc">App will restart to apply</span>
+        </div>
+      </button>
+    </div>
     <!-- Attribution -->
     <div class="menu-footer">
       <p><strong>RESCUE NextGen™</strong> is a trademark of Maersk Training Inc.</p>
@@ -584,6 +614,20 @@
       <div id="splash-spinner"></div>
       <button id="splash-retry">Retry Connection</button>
     </div>
+    <div id="offline-overlay">
+      <svg id="offline-logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" rx="88" fill="#0e3f56"/>
+        <g transform="matrix(0.87 0 0 0.87 -579.2 -216.5)">
+          <path fill="#e07026" d="M960.01,326.18c53.48,0,101.75,22.64,135.82,58.8l26.69-26.69c-40.92-42.99-98.62-69.87-162.51-69.87s-121.6,26.88-162.51,69.87l26.69,26.69c34.07-36.16,82.34-58.8,135.82-58.8Z"/>
+          <path fill="#e07026" d="M960.01,411.98c29.83,0,56.66,13.02,75.15,33.66l26.72-26.72c-25.35-27.47-61.63-44.71-101.87-44.71s-76.51,17.24-101.87,44.71l26.72,26.72c18.49-20.64,45.32-33.66,75.15-33.66Z"/>
+          <circle fill="#e07026" cx="960.01" cy="496.4" r="30.98"/>
+        </g>
+      </svg>
+      <div id="offline-title">Connection Lost</div>
+      <div id="offline-sub">Training system unreachable</div>
+      <div id="offline-spinner"></div>
+      <div id="offline-countdown">Retrying in 10s...</div>
+    </div>
     <iframe
       id="app-frame"
       sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-downloads"
@@ -596,65 +640,46 @@
     const NUC_IP = '192.168.50.1';
     let   nucUrl = `http://${NUC_IP}/rescue`;
     let   menuOpen = false;
+    let   connectedOnce = false;
 
-    // ── Version display ─────────────────────────────────────────────────────
-    // Fetch RESCUE backend version from /api/status
-    async function fetchVersion() {
-      try {
-        const r = await fetch(`http://${NUC_IP}/api/rescue/system/time`, { signal: AbortSignal.timeout(3000) });
-        // Use desktop app version as fallback
-        document.getElementById('menu-version').textContent = 'v1.0.0 · AWARE™ Edge';
-      } catch (_) {
-        document.getElementById('menu-version').textContent = 'v1.0.0 · AWARE™ Edge';
-      }
-    }
-
-    // ── Site name ────────────────────────────────────────────────────────────
+    // -- Site name
     async function fetchSiteName() {
       try {
         const r = await fetch(`http://${NUC_IP}/api/v1/health`, { signal: AbortSignal.timeout(3000) });
-        if (r.ok) {
-          const d = await r.json();
-          return d.site || null;
-        }
+        if (r.ok) { const d = await r.json(); return d.site || null; }
       } catch (_) {}
       return null;
     }
 
-    // ── Live health dots ──────────────────────────────────────────────────────
+    // -- Health dots
     async function refreshHealth() {
       try {
         const r = await fetch(`http://${NUC_IP}/api/v1/health`, { signal: AbortSignal.timeout(4000) });
         if (!r.ok) throw new Error();
         const d = await r.json();
-
-        // d.services = [{name, status}, ...]
         const map = {};
         (d.services || []).forEach(s => { map[s.name.toLowerCase()] = s.status; });
-
         function dot(id, key) {
           const el = document.getElementById(id);
           if (!el) return;
           el.className = 'health-dot';
           const st = map[key] || 'unknown';
-          if (st === 'healthy')  el.classList.add('healthy');
+          if (st === 'healthy') el.classList.add('healthy');
           else if (st === 'down') el.classList.add('down');
-          else                    el.classList.add('degraded');
+          else el.classList.add('degraded');
         }
         dot('hd-backend', 'backend');
         dot('hd-db',      'postgresql');
         dot('hd-mqtt',    'mqtt');
         dot('hd-vpn',     'vpn remote support');
-      } catch (_) {
-        // NUC unreachable — leave dots grey
-      }
+      } catch (_) {}
     }
 
-    // ── Startup ──────────────────────────────────────────────────────────────
+    // -- Startup
     api.getConfig().then(async cfg => {
       nucUrl = cfg.nucUrl;
-      fetchVersion();
-
+      document.getElementById('menu-version').textContent =
+        'v' + cfg.version + ' \u00b7 AWARE\u2122 Edge';
       const siteName = await fetchSiteName();
       if (siteName) {
         const el = document.getElementById('site-label');
@@ -665,22 +690,21 @@
       loadApp(nucUrl);
     });
 
-    // ── Load app in iframe ───────────────────────────────────────────────────
+    // -- Load app
     let retryCount = 0, retryTimer = null;
-
     function loadApp(url) {
       const frame  = document.getElementById('app-frame');
       const splash = document.getElementById('splash');
       const retry  = document.getElementById('splash-retry');
-
-      setStatus('connecting', 'Connecting…');
+      setStatus('connecting', 'Connecting\u2026');
       frame.src = url;
-
       frame.onload = () => {
         setTimeout(() => {
           splash.classList.add('hidden');
           setStatus('connected', 'Training System Online');
           retryCount = 0;
+          connectedOnce = true;
+          startHeartbeat();
         }, 800);
       };
       frame.onerror = () => {
@@ -704,16 +728,79 @@
       loadApp(nucUrl);
     });
 
-    // ── Icon menu toggle ─────────────────────────────────────────────────────
+    // -- Offline overlay
+    let heartbeatTimer = null, offlineCountdown = null, countdownSecs = 10;
+    const offlineEl    = document.getElementById('offline-overlay');
+    const countdownEl  = document.getElementById('offline-countdown');
+
+    function showOffline() {
+      if (offlineEl.classList.contains('visible')) return;
+      setStatus('error', 'Connection Lost');
+      offlineEl.classList.add('visible');
+      startCountdown();
+    }
+    function hideOffline() {
+      offlineEl.classList.remove('visible');
+      clearInterval(offlineCountdown);
+    }
+    function startCountdown() {
+      clearInterval(offlineCountdown);
+      countdownSecs = 10;
+      countdownEl.textContent = 'Retrying in ' + countdownSecs + 's\u2026';
+      offlineCountdown = setInterval(() => {
+        countdownSecs--;
+        if (countdownSecs <= 0) {
+          clearInterval(offlineCountdown);
+          countdownEl.textContent = 'Retrying\u2026';
+          retryConnection();
+        } else {
+          countdownEl.textContent = 'Retrying in ' + countdownSecs + 's\u2026';
+        }
+      }, 1000);
+    }
+    function retryConnection() {
+      fetch('http://' + NUC_IP + '/health', { signal: AbortSignal.timeout(4000) })
+        .then(r => {
+          if (r.ok) {
+            hideOffline();
+            document.getElementById('app-frame').src = nucUrl;
+            setStatus('connected', 'Training System Online');
+          } else { startCountdown(); }
+        })
+        .catch(() => startCountdown());
+    }
+    function startHeartbeat() {
+      if (heartbeatTimer) return;
+      heartbeatTimer = setInterval(() => {
+        fetch('http://' + NUC_IP + '/health', { signal: AbortSignal.timeout(4000) })
+          .then(r => { if (r.ok) hideOffline(); else showOffline(); })
+          .catch(() => { if (connectedOnce) showOffline(); });
+      }, 5000);
+    }
+
+    // -- Auto-update IPC
+    if (api.onUpdateReady) {
+      api.onUpdateReady((info) => {
+        document.getElementById('update-badge').classList.add('visible');
+        document.getElementById('update-section').style.display = 'block';
+        document.getElementById('update-version-label').textContent =
+          'Install v' + info.version;
+        document.getElementById('mi-install-update').addEventListener('click', () => {
+          closeMenu();
+          api.installUpdate();
+        });
+      });
+    }
+
+    // -- Icon menu
     const iconBtn  = document.getElementById('icon-btn');
     const iconMenu = document.getElementById('icon-menu');
-
     function openMenu() {
       menuOpen = true;
       iconMenu.classList.add('open');
       iconBtn.classList.add('active');
       iconBtn.setAttribute('aria-expanded', 'true');
-      refreshHealth(); // always fetch fresh on open
+      refreshHealth();
     }
     function closeMenu() {
       menuOpen = false;
@@ -721,33 +808,23 @@
       iconBtn.classList.remove('active');
       iconBtn.setAttribute('aria-expanded', 'false');
     }
-
     iconBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       menuOpen ? closeMenu() : openMenu();
     });
-
-    // Close when clicking outside
     document.addEventListener('click', (e) => {
-      if (menuOpen && !iconMenu.contains(e.target) && e.target !== iconBtn) {
-        closeMenu();
-      }
+      if (menuOpen && !iconMenu.contains(e.target) && e.target !== iconBtn) closeMenu();
     });
 
-    // ── Menu item actions ────────────────────────────────────────────────────
     function menuAction(id, action) {
-      document.getElementById(id).addEventListener('click', () => {
-        closeMenu();
-        action();
-      });
+      document.getElementById(id).addEventListener('click', () => { closeMenu(); action(); });
     }
-
     menuAction('mi-dashboard', () => api.openExternal('https://api.awaresimulation.com'));
     menuAction('mi-admin',     () => api.openExternal(`http://${NUC_IP}`));
     menuAction('mi-telemetry', () => api.openExternal(`http://${NUC_IP}/api/v1/telemetry`));
     menuAction('mi-dongles',   () => api.openExternal(`http://${NUC_IP}/dongle/diagnostics.html`));
 
-    // ── Window controls ──────────────────────────────────────────────────────
+    // -- Window controls
     document.getElementById('btn-minimize').addEventListener('click', () => api.minimize());
     document.getElementById('btn-maximize').addEventListener('click', () => api.maximize());
     document.getElementById('btn-close').addEventListener('click',    () => api.close());
