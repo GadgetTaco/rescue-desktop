@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, shell, Menu, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Menu, screen, globalShortcut } = require('electron');
 const path = require('path');
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -8,8 +8,18 @@ const NUC_IP   = '192.168.50.1';
 const NUC_URL  = `http://${NUC_IP}/rescue`;
 const IS_DEV   = process.env.NODE_ENV === 'development';
 
-// ─── Remove default app menu completely ──────────────────────────────────────
-Menu.setApplicationMenu(null);
+// ─── Single instance lock ─────────────────────────────────────────────────────
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 // ─── Create main window ──────────────────────────────────────────────────────
 function createWindow() {
@@ -33,6 +43,9 @@ function createWindow() {
     show: false,
   });
 
+  // Start maximized
+  win.maximize();
+
   win.loadFile(path.join(__dirname, 'app.html'));
 
   win.once('ready-to-show', () => {
@@ -40,7 +53,6 @@ function createWindow() {
     if (IS_DEV) win.webContents.openDevTools({ mode: 'detach' });
   });
 
-  // Block navigation away from the NUC or our wrapper
   win.webContents.on('will-navigate', (event, url) => {
     if (!url.startsWith('file://') && !url.startsWith(`http://${NUC_IP}`)) {
       event.preventDefault();
@@ -72,19 +84,24 @@ ipcMain.on('window:is-maximized', (event) => {
   event.returnValue = mainWindow?.isMaximized() ?? false;
 });
 
-// Open any URL in the real system browser
 ipcMain.on('open:external', (_event, url) => {
-  // Whitelist: only allow http/https URLs
   if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
     shell.openExternal(url);
   }
 });
 
-// Pass NUC URL to renderer
 ipcMain.handle('get:config', () => ({ nucUrl: NUC_URL }));
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  // Remove default File/Edit/View menu bar completely
+  Menu.setApplicationMenu(null);
+
+  // F11 toggles true fullscreen — hides Windows taskbar completely
+  globalShortcut.register('F11', () => {
+    if (mainWindow) mainWindow.setFullScreen(!mainWindow.isFullScreen());
+  });
+
   mainWindow = createWindow();
 
   mainWindow.on('maximize',   () => mainWindow.webContents.send('window:maximized-change', true));
@@ -95,4 +112,7 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => app.quit());
+app.on('window-all-closed', () => {
+  globalShortcut.unregisterAll();
+  app.quit();
+});
