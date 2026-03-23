@@ -76,7 +76,7 @@ function createWindow() {
     show: false,
   });
 
-  win.maximize();
+  win.setFullScreen(true);
   win.loadFile(path.join(__dirname, 'app.html'));
 
   win.once('ready-to-show', () => {
