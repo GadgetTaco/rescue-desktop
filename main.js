@@ -26,16 +26,21 @@ if (!gotLock) {
 function setupAutoUpdater() {
   if (IS_DEV) return; // Never auto-update in dev mode
 
-  autoUpdater.autoDownload    = true;  // Download silently in background
-  autoUpdater.autoInstallOnAppQuit = true; // Install when app next closes
+  // Repo is public — no token needed
+  autoUpdater.autoDownload         = true;  // Download silently in background
+  autoUpdater.autoInstallOnAppQuit = true;  // Install cleanly on next close
+
+  // Log update activity to console (visible in packaged app logs)
+  autoUpdater.logger = require('electron-log');
+  autoUpdater.logger.transports.file.level = 'info';
 
   // Check on startup, then every 4 hours
-  autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+  autoUpdater.checkForUpdates().catch(() => {});
   setInterval(() => {
-    autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+    autoUpdater.checkForUpdates().catch(() => {});
   }, 4 * 60 * 60 * 1000);
 
-  // Tell the renderer an update is ready to install
+  // Notify renderer when update is downloaded and ready to install
   autoUpdater.on('update-downloaded', (info) => {
     mainWindow?.webContents.send('update:ready', {
       version: info.version,
@@ -43,9 +48,9 @@ function setupAutoUpdater() {
     });
   });
 
+  // Log errors silently — offline vessels, satellite links etc.
   autoUpdater.on('error', (err) => {
-    // Silently ignore update errors — offline vessels etc.
-    console.log('Auto-updater error (non-fatal):', err.message);
+    console.log('Auto-updater (non-fatal):', err.message);
   });
 }
 
