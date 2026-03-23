@@ -201,7 +201,6 @@
       border-radius: 0 0 10px 10px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
       z-index: 9998;
-      overflow: hidden;
       opacity: 0;
       transform: translateY(-6px);
       pointer-events: none;
@@ -215,26 +214,19 @@
 
     /* Menu header — branding */
     .menu-header {
-      padding: 8px 16px 6px;
+      padding: 5px 16px;
       border-bottom: 1px solid var(--zinc-800);
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
     }
-    .menu-header-logo {
-      width: 32px; height: 32px; flex-shrink: 0;
-    }
+    .menu-header-logo { display: none; }
     .menu-header-text {}
-    .menu-header-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: white;
-      letter-spacing: 0.04em;
-    }
+    .menu-header-title { display: none; }
     .menu-header-version {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--zinc-500);
-      margin-top: 1px;
+      letter-spacing: 0.03em;
     }
 
     /* Section label */
@@ -802,6 +794,11 @@
       iconMenu.classList.add('open');
       iconBtn.classList.add('active');
       iconBtn.setAttribute('aria-expanded', 'true');
+      // Constrain menu height to available screen space below titlebar
+      const titlebarH = document.getElementById('titlebar').offsetHeight;
+      const available = window.innerHeight - titlebarH - 8;
+      iconMenu.style.maxHeight = available + 'px';
+      iconMenu.style.overflowY = 'scroll';
       refreshHealth();
     }
     function closeMenu() {
