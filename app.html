@@ -195,14 +195,13 @@
       top: var(--titlebar-h);
       left: 0;
       width: 268px;
-      max-height: 85vh;
       background: #111113;
       border: 1px solid var(--zinc-800);
       border-top: none;
       border-radius: 0 0 10px 10px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
       z-index: 9998;
-      overflow-y: scroll;
+      overflow: hidden;
       opacity: 0;
       transform: translateY(-6px);
       pointer-events: none;
@@ -216,7 +215,7 @@
 
     /* Menu header — branding */
     .menu-header {
-      padding: 14px 16px 12px;
+      padding: 8px 16px 6px;
       border-bottom: 1px solid var(--zinc-800);
       display: flex;
       align-items: center;
@@ -240,7 +239,7 @@
 
     /* Section label */
     .menu-section-label {
-      padding: 10px 16px 4px;
+      padding: 5px 16px 2px;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.1em;
@@ -253,7 +252,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 16px;
+      padding: 5px 16px;
       cursor: pointer;
       background: transparent;
       border: none;
@@ -305,7 +304,7 @@
 
     /* Health mini-row inside menu */
     #health-row {
-      padding: 6px 16px 8px;
+      padding: 3px 12px 4px;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -330,7 +329,7 @@
 
     /* Footer attribution */
     .menu-footer {
-      padding: 10px 16px 12px;
+      padding: 6px 16px 8px;
       border-top: 1px solid var(--zinc-800);
       text-align: center;
     }
@@ -587,7 +586,7 @@
     <!-- Attribution -->
     <div class="menu-footer">
       <p><strong>RESCUE NextGen™</strong> is a trademark of Maersk Training Inc.<br><strong>AWARE™</strong> is a trademark of GadgetTaco LLC.</p>
-      <p style="margin-top:6px;">&copy; 2025 Maersk Training Inc. &amp; GadgetTaco LLC.<br>All rights reserved.</p>
+      <p style="margin-top:3px;">&copy; 2025 Maersk Training Inc. &amp; GadgetTaco LLC.<br>All rights reserved.</p>
     </div>
 
   </div>
