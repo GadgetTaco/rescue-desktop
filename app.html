@@ -321,16 +321,15 @@
 
     /* Footer attribution */
     .menu-footer {
-      padding: 6px 16px 8px;
+      padding: 5px 12px 6px;
       border-top: 1px solid var(--zinc-800);
       text-align: center;
     }
     .menu-footer p {
-      font-size: 11px;
+      font-size: 9px;
       color: var(--zinc-600);
-      line-height: 1.5;
+      line-height: 1.4;
     }
-    .menu-footer strong { color: var(--zinc-500); }
 
     /* ── CONTENT ────────────────────────────────────────────────────────────── */
     #content {
@@ -577,8 +576,7 @@
     </div>
     <!-- Attribution -->
     <div class="menu-footer">
-      <p><strong>RESCUE NextGen™</strong> is a trademark of Maersk Training Inc.<br><strong>AWARE™</strong> is a trademark of GadgetTaco LLC.</p>
-      <p style="margin-top:3px;">&copy; 2025 Maersk Training Inc. &amp; GadgetTaco LLC.<br>All rights reserved.</p>
+      <p>RESCUE NextGen™ is a trademark of Maersk Training Inc. AWARE™ is a trademark of GadgetTaco LLC. &copy; 2025 Maersk Training Inc. &amp; GadgetTaco LLC. All rights reserved.</p>
     </div>
 
   </div>
@@ -794,11 +792,7 @@
       iconMenu.classList.add('open');
       iconBtn.classList.add('active');
       iconBtn.setAttribute('aria-expanded', 'true');
-      // Constrain menu height to available screen space below titlebar
-      const titlebarH = document.getElementById('titlebar').offsetHeight;
-      const available = window.innerHeight - titlebarH - 8;
-      iconMenu.style.maxHeight = available + 'px';
-      iconMenu.style.overflowY = 'scroll';
+
       refreshHealth();
     }
     function closeMenu() {
