@@ -128,10 +128,16 @@ ipcMain.on('update:install', () => {
 });
 
 // Pass config + app version to renderer
-ipcMain.handle('get:config', () => ({
-  nucUrl:  NUC_URL,
-  version: app.getVersion(), // reads from package.json automatically
-}));
+ipcMain.handle('get:config', () => {
+  // Read system display scale factor — covers Surface Pro 150%/200% DPI
+  const display     = screen.getPrimaryDisplay();
+  const scaleFactor = display.scaleFactor || 1.0;
+  return {
+    nucUrl:  NUC_URL,
+    version: app.getVersion(),
+    uiScale: scaleFactor,
+  };
+});
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {

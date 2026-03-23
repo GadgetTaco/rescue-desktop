@@ -10,6 +10,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
+      --ui-scale: 1;
       --navy:      #0e3f56;
       --navy-mid:  #1a5570;
       --zinc-950:  #09090b;
@@ -43,6 +44,7 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       height: var(--titlebar-h);
+      zoom: var(--ui-scale);
       background: var(--navy);
       border-bottom: 1px solid rgba(255,255,255,0.08);
       display: flex;
@@ -94,7 +96,7 @@
     }
 
     #app-name {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.05em;
       color: white;
@@ -103,7 +105,7 @@
     }
 
     #site-label {
-      font-size: 10px;
+      font-size: 11px;
       color: rgba(255,255,255,0.45);
       font-weight: 500;
       white-space: nowrap;
@@ -136,7 +138,7 @@
       border-radius: 999px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.1);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       color: rgba(255,255,255,0.4);
       letter-spacing: 0.03em;
@@ -192,9 +194,10 @@
     /* ── ICON DROPDOWN MENU ─────────────────────────────────────────────────── */
     #icon-menu {
       position: fixed;
-      top: var(--titlebar-h);
+      top: calc(var(--titlebar-h) * var(--ui-scale));
       left: 0;
       width: 268px;
+      zoom: var(--ui-scale);
       background: #111113;
       border: 1px solid var(--zinc-800);
       border-top: none;
@@ -232,7 +235,7 @@
       letter-spacing: 0.04em;
     }
     .menu-header-version {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--zinc-500);
       margin-top: 1px;
     }
@@ -240,7 +243,7 @@
     /* Section label */
     .menu-section-label {
       padding: 10px 16px 4px;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -259,7 +262,7 @@
       width: 100%;
       text-align: left;
       color: var(--zinc-300);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
       transition: background 0.12s ease, color 0.12s ease;
       text-decoration: none;
@@ -281,7 +284,7 @@
     .menu-item-label { display: block; }
     .menu-item-desc {
       display: block;
-      font-size: 10px;
+      font-size: 11px;
       color: var(--zinc-500);
       margin-top: 1px;
       white-space: nowrap;
@@ -313,7 +316,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 11px;
       color: var(--zinc-400);
     }
     .health-dot {
@@ -333,7 +336,7 @@
       border-top: 1px solid var(--zinc-800);
     }
     .menu-footer p {
-      font-size: 9.5px;
+      font-size: 11px;
       color: var(--zinc-600);
       line-height: 1.5;
     }
@@ -376,7 +379,7 @@
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 6px;
       color: rgba(255,255,255,0.6);
-      font-size: 12px; font-weight: 600;
+      font-size: 13px; font-weight: 600;
       cursor: pointer; display: none;
       transition: background 0.15s ease;
     }
@@ -680,6 +683,7 @@
       nucUrl = cfg.nucUrl;
       document.getElementById('menu-version').textContent =
         'v' + cfg.version + ' \u00b7 AWARE\u2122 Edge';
+      if (cfg.uiScale && cfg.uiScale !== 1) { document.documentElement.style.setProperty('--ui-scale', cfg.uiScale); }
       const siteName = await fetchSiteName();
       if (siteName) {
         const el = document.getElementById('site-label');
