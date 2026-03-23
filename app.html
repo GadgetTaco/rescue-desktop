@@ -10,7 +10,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --ui-scale: 1;
       --navy:      #0e3f56;
       --navy-mid:  #1a5570;
       --zinc-950:  #09090b;
@@ -44,7 +43,6 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       height: var(--titlebar-h);
-      zoom: var(--ui-scale);
       background: var(--navy);
       border-bottom: 1px solid rgba(255,255,255,0.08);
       display: flex;
@@ -194,10 +192,9 @@
     /* ── ICON DROPDOWN MENU ─────────────────────────────────────────────────── */
     #icon-menu {
       position: fixed;
-      top: calc(var(--titlebar-h) * var(--ui-scale));
+      top: var(--titlebar-h);
       left: 0;
       width: 268px;
-      zoom: var(--ui-scale);
       background: #111113;
       border: 1px solid var(--zinc-800);
       border-top: none;
@@ -683,7 +680,7 @@
       nucUrl = cfg.nucUrl;
       document.getElementById('menu-version').textContent =
         'v' + cfg.version + ' \u00b7 AWARE\u2122 Edge';
-      if (cfg.uiScale && cfg.uiScale !== 1) { document.documentElement.style.setProperty('--ui-scale', cfg.uiScale); }
+     
       const siteName = await fetchSiteName();
       if (siteName) {
         const el = document.getElementById('site-label');
