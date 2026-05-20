@@ -411,13 +411,17 @@ body {
   // ── Titlebar show / hide ─────────────────────────────────────────────────
   function showBar () {
     titlebar.classList.add('visible');
+    $('hz-top').style.pointerEvents    = 'none';
+    $('hz-corner').style.pointerEvents = 'none';
     resetTimer();
-    checkHealth(); // refresh health dots
+    checkHealth();
   }
 
   function hideBar () {
     titlebar.classList.remove('visible');
     clearTimeout(tbTimer);
+    $('hz-top').style.pointerEvents    = '';
+    $('hz-corner').style.pointerEvents = '';
   }
 
   function resetTimer () {
