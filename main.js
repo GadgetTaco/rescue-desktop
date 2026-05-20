@@ -6,11 +6,12 @@ const { execSync }    = require('child_process');
 const path            = require('path');
 const log             = require('electron-log');
 
+// Accept self-signed NUC cert for auto-updater HTTP client
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
-log.info('RESCUE NextGen starting — v' + app.getVersion());
+log.info('RESCUE NextGen starting - v' + app.getVersion());
 
 const NUC_URL    = 'https://192.168.50.1';
 const WIFI_SSID  = 'AWARE-Training-Site';
@@ -19,12 +20,15 @@ const UPDATE_URL = 'https://192.168.50.1/updates/';
 
 let mainWindow  = null;
 let updateReady = false;
+
+// ─── Trust self-signed NUC cert in webContents (iframe) ─────────────────────
 function trustNucCert () {
   session.defaultSession.setCertificateVerifyProc((req, callback) => {
     callback(req.hostname === '192.168.50.1' ? 0 : -3);
   });
 }
 
+// ─── WiFi check (Windows only) ───────────────────────────────────────────────
 function checkWifi () {
   if (process.platform !== 'win32') return;
   try {
@@ -40,44 +44,66 @@ function checkWifi () {
       detail  : `Current network: ${ssid || 'none'}\nPassword: ${WIFI_PASS}`,
       buttons : ['OK'],
     });
-  } catch (_) { }
+  } catch (_) { /* not WiFi capable — skip */ }
 }
 
+// ─── Main window ─────────────────────────────────────────────────────────────
 function createWindow () {
   trustNucCert();
+
   mainWindow = new BrowserWindow({
-    kiosk: true,
-    backgroundColor: '#0d1117',
-    title: 'RESCUE NextGen\u2122',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
+    kiosk           : true,
+    backgroundColor : '#0d1117',
+    title           : 'RESCUE NextGen\u2122',
+    webPreferences  : {
+      preload          : path.join(__dirname, 'preload.js'),
+      contextIsolation : true,
+      nodeIntegration  : false,
     },
   });
+
   mainWindow.loadFile('app.html');
+
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.send('config', { nucUrl: NUC_URL, version: app.getVersion() });
+    mainWindow.webContents.send('config', {
+      nucUrl  : NUC_URL,
+      version : app.getVersion(),
+    });
   });
 }
 
+// ─── IPC ─────────────────────────────────────────────────────────────────────
 ipcMain.handle('get:config',  () => ({ nucUrl: NUC_URL, version: app.getVersion() }));
 ipcMain.handle('check:update', () => updateReady);
-ipcMain.on('install:update', () => setImmediate(() => autoUpdater.quitAndInstall()));
+ipcMain.on('install:update',  () => setImmediate(() => autoUpdater.quitAndInstall()));
 ipcMain.on('quit:app',        () => app.quit());
 
+// ─── Auto-updater ─────────────────────────────────────────────────────────────
 function setupUpdater () {
   autoUpdater.setFeedURL({ provider: 'generic', url: UPDATE_URL });
-  const check = () => autoUpdater.checkForUpdates().catch(e => log.warn('Update check:', e.message));
+
+  const check = () =>
+    autoUpdater.checkForUpdates().catch(e => log.warn('Update check:', e.message));
+
   check();
-  setInterval(check, 4 * 60 * 60 * 1000);
+  setInterval(check, 4 * 60 * 60 * 1000);  // every 4 hours
+
   autoUpdater.on('update-downloaded', () => {
     updateReady = true;
-    log.info('Update ready';
+    log.info('Update downloaded - ready to install');
     if (mainWindow) mainWindow.webContents.send('update:ready');
   });
+
   autoUpdater.on('error', e => log.error('Updater:', e.message));
 }
 
-app.whenReady().then(() => { checkWifi();  createWindow();  setupUpdater(); });
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+app.whenReady().then(() => {
+  checkWifi();
+  createWindow();
+  setupUpdater();
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
