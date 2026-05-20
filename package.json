@@ -1,7 +1,7 @@
 {
   "name": "rescue-nextgen-desktop",
-  "version": "1.1.4",
-  "description": "RESCUE NextGen\u2122 Desktop Application \u2014 GadgetTaco LLC",
+  "version": "1.2.0",
+  "description": "RESCUE NextGen™ Desktop Application — GadgetTaco LLC",
   "main": "main.js",
   "private": true,
   "scripts": {
@@ -18,12 +18,11 @@
   "build": {
     "appId": "com.gadgettaco.rescue-nextgen",
     "productName": "RESCUE NextGen",
-    "copyright": "Copyright \u00a9 2025 GadgetTaco LLC. All rights reserved.",
+    "copyright": "Copyright © 2025 GadgetTaco LLC. All rights reserved.",
     "files": [
       "main.js",
       "preload.js",
       "app.html",
-      "config.json",
       "assets/**"
     ],
     "win": {
@@ -58,11 +57,8 @@
       "buildResources": "assets"
     },
     "publish": {
-      "provider": "github",
-      "owner": "GadgetTaco",
-      "repo": "rescue-desktop",
-      "private": false,
-      "releaseType": "release"
+      "provider": "generic",
+      "url": "http://192.168.50.1/updates/"
     }
   },
   "dependencies": {
