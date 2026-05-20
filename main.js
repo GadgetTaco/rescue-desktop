@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, session, Menu } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const { execSync }    = require('child_process');
 const path            = require('path');
@@ -99,6 +99,7 @@ function setupUpdater () {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   checkWifi();
   createWindow();
   setupUpdater();
