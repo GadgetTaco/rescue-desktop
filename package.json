@@ -1,6 +1,6 @@
 {
   "name": "rescue-nextgen-desktop",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "RESCUE NextGen™ Desktop Application — GadgetTaco LLC",
   "main": "main.js",
   "private": true,
@@ -18,7 +18,7 @@
   "build": {
     "appId": "com.gadgettaco.rescue-nextgen",
     "productName": "RESCUE NextGen",
-    "copyright": "Copyright © 2025 GadgetTaco LLC. All rights reserved.",
+    "copyright": "Copyright © 2025-2026 GadgetTaco LLC. All rights reserved.",
     "files": [
       "main.js",
       "preload.js",
@@ -34,7 +34,8 @@
           ]
         }
       ],
-      "icon": "assets/rescue-icon.ico"
+      "icon": "assets/rescue-icon.ico",
+      "artifactName": "RESCUE-NextGen-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
