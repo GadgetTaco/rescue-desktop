@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, session, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const { execSync }    = require('child_process');
 const path            = require('path');
@@ -13,7 +13,7 @@ autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 log.info('RESCUE NextGen starting - v' + app.getVersion());
 
-const NUC_URL    = 'https://192.168.50.1';
+const NUC_URL    = 'http://192.168.50.1';   // app content + API (HTTP on LAN)
 const WIFI_SSID  = 'AWARE-Training-Site';
 const WIFI_PASS  = 'RescueTraining2025';
 const UPDATE_URL = 'https://192.168.50.1/updates/';
@@ -99,7 +99,6 @@ function setupUpdater () {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
-  Menu.setApplicationMenu(null);
   checkWifi();
   createWindow();
   setupUpdater();
