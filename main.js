@@ -64,6 +64,9 @@ function createWindow () {
 
   mainWindow.loadFile('app.html');
 
+  // Block all popup / new-window requests
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send('config', {
       nucUrl  : NUC_URL,
